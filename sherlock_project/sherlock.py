@@ -25,6 +25,9 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from json import loads as json_loads
 from time import monotonic
 from typing import Optional
+from enum import Enum
+
+from requests import Response
 
 import requests
 from requests_futures.sessions import FuturesSession
@@ -392,8 +395,13 @@ def sherlock(
         if error_text is not None:
             error_context = error_text
 
-        elif any(hitMsg in r.text for hitMsg in WAFHitMsgs):
+        elif r is not None and any(hitMsg in r.text for hitMsg in WAFHitMsgs):
             query_status = QueryStatus.WAF
+
+        elif r is None:
+            # All retries exhausted with no valid response — treat as unknown.
+            query_status = QueryStatus.UNKNOWN
+            error_context = error_context or "All request attempts failed"
 
         else:
             if any(errtype not in ["message", "status_code", "response_url"] for errtype in error_type):
