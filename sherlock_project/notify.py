@@ -255,7 +255,7 @@ class QueryNotifyPrint(QueryNotify):
         Return Value:
         Nothing.
         """
-        NumberOfResults = self.countResults() - 1
+        NumberOfResults = self.countResults()
 
         print(Style.BRIGHT + Fore.GREEN + "[" +
               Fore.YELLOW + "*" +
