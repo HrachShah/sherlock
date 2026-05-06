@@ -367,12 +367,12 @@ def sherlock(
         # Attempt to get request information
         try:
             http_status = r.status_code
-        except Exception:
+        except (AttributeError, TypeError):
             http_status = "?"
         try:
             response_text = r.text.encode(r.encoding or "UTF-8")
-        except Exception:
-            response_text = ""
+        except (AttributeError, UnicodeEncodeError):
+            response_text = b""
 
         query_status = QueryStatus.UNKNOWN
         error_context = None
@@ -463,7 +463,7 @@ def sherlock(
             print("Results...")
             try:
                 print(f"RESPONSE CODE : {r.status_code}")
-            except Exception:
+            except (AttributeError, TypeError):
                 pass
             try:
                 print(f"ERROR TEXT    : {net_info['errorMsg']}")
@@ -472,7 +472,7 @@ def sherlock(
             print(">>>>> BEGIN RESPONSE TEXT")
             try:
                 print(r.text)
-            except Exception:
+            except (AttributeError, TypeError):
                 pass
             print("<<<<< END RESPONSE TEXT")
             print("VERDICT       : " + str(query_status))
