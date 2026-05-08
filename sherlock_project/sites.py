@@ -176,9 +176,9 @@ class SitesInformation:
                         except KeyError:
                             pass
 
-            except Exception:
+            except (json.JSONDecodeError, RuntimeError) as exc:
                 # If there was any problem loading the exclusions, just continue without them
-                print("Warning: Could not load exclusions, continuing without them.")
+                print(f"Warning: Could not load exclusions ({exc}), continuing without them.")
                 honor_exclusions = False
 
         self.sites = {}
