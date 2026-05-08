@@ -699,8 +699,11 @@ def main():
     # Check for newer version of Sherlock. If it exists, let the user know about it
     try:
         latest_release_raw = requests.get(forge_api_latest_release, timeout=10).text
-        latest_release_json = json_loads(latest_release_raw)
-        latest_remote_tag = latest_release_json["tag_name"]
+        try:
+            latest_release_json = json_loads(latest_release_raw)
+        except ValueError:
+            latest_release_json = {}
+        latest_remote_tag = latest_release_json.get("tag_name", "")
 
         if latest_remote_tag[1:] != __version__:
             print(
@@ -746,11 +749,14 @@ def main():
                 if args.json_file.isnumeric():
                     pull_number = args.json_file
                     pull_url = f"https://api.github.com/repos/sherlock-project/sherlock/pulls/{pull_number}"
-                    pull_request_raw = requests.get(pull_url, timeout=10).text
-                    pull_request_json = json_loads(pull_request_raw)
+                    try:
+                        pull_request_raw = requests.get(pull_url, timeout=10).text
+                        pull_request_json = json_loads(pull_request_raw)
+                    except (requests.RequestException, ValueError):
+                        pull_request_json = {}
 
                     # Check if it's a valid pull request
-                    if "message" in pull_request_json:
+                    if not isinstance(pull_request_json, dict) or "message" in pull_request_json:
                         print(f"ERROR: Pull request #{pull_number} not found.")
                         sys.exit(1)
 
