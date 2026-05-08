@@ -370,11 +370,11 @@ def sherlock(
         # Attempt to get request information
         try:
             http_status = r.status_code
-        except Exception:
+        except (AttributeError, TypeError):
             http_status = "?"
         try:
             response_text = r.text.encode(r.encoding or "UTF-8")
-        except Exception:
+        except (AttributeError, UnicodeDecodeError):
             response_text = ""
 
         query_status = QueryStatus.UNKNOWN
