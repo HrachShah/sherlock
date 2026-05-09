@@ -8,6 +8,7 @@ networks.
 """
 
 import sys
+import asyncio
 
 try:
     from sherlock_project.__init__ import import_error_test_var # noqa: F401
@@ -136,6 +137,11 @@ def get_response(request_future, error_type, social_network):
     except requests.exceptions.RequestException as err:
         error_context = "Unknown Error"
         exception_text = str(err)
+    except (requests.exceptions.CancelledError, asyncio.CancelledError):
+        # Request was cancelled (e.g., SIGINT fired during a rolling timeout window).
+        # Propagate so the caller can handle graceful shutdown rather than treating
+        # this as a generic error that might produce a false-positive result.
+        raise
 
     return response, error_context, exception_text
 
