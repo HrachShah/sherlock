@@ -125,7 +125,7 @@ class SitesInformation:
             # Reference is to a URL.
             try:
                 response = requests.get(url=data_file_path, timeout=30)
-            except Exception as error:
+            except requests.RequestException as error:
                 raise FileNotFoundError(
                     f"Problem while attempting to access data file URL '{data_file_path}':  {error}"
                 )
