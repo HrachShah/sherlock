@@ -711,7 +711,7 @@ def main():
                 f"\n{latest_release_json['html_url']}"
             )
 
-    except Exception as error:
+    except requests.RequestException as error:
         print(f"A problem occurred while checking for an update: {error}")
 
     # Make prompts
@@ -768,7 +768,7 @@ def main():
                 honor_exclusions=not args.ignore_exclusions,
                 do_not_exclude=args.site_list,
             )
-    except Exception as error:
+    except (TypeError, ValueError, FileNotFoundError) as error:
         print(f"ERROR:  {error}")
         sys.exit(1)
 
