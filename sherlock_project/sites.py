@@ -136,7 +136,7 @@ class SitesInformation:
                                         )
             try:
                 site_data = response.json()
-            except Exception as error:
+            except json.JSONDecodeError as error:
                 raise ValueError(
                     f"Problem parsing json contents at '{data_file_path}':  {error}."
                 )
@@ -147,7 +147,7 @@ class SitesInformation:
                 with open(data_file_path, "r", encoding="utf-8") as file:
                     try:
                         site_data = json.load(file)
-                    except Exception as error:
+                    except json.JSONDecodeError as error:
                         raise ValueError(
                             f"Problem parsing json contents at '{data_file_path}':  {error}."
                         )
