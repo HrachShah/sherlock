@@ -471,7 +471,7 @@ def sherlock(
             print("Results...")
             try:
                 print(f"RESPONSE CODE : {r.status_code}")
-            except Exception:
+            except AttributeError:
                 pass
             try:
                 print(f"ERROR TEXT    : {net_info['errorMsg']}")
