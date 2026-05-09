@@ -480,7 +480,7 @@ def sherlock(
             print(">>>>> BEGIN RESPONSE TEXT")
             try:
                 print(r.text)
-            except Exception:
+            except (AttributeError, UnicodeDecodeError):
                 pass
             print("<<<<< END RESPONSE TEXT")
             print("VERDICT       : " + str(query_status))
