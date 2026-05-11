@@ -780,7 +780,7 @@ def main():
                 honor_exclusions=not args.ignore_exclusions,
                 do_not_exclude=args.site_list,
             )
-    except Exception as error:
+    except (FileNotFoundError, ValueError) as error:
         print(f"ERROR:  {error}")
         sys.exit(1)
 
