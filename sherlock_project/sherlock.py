@@ -463,18 +463,18 @@ def sherlock(
             print("Results...")
             try:
                 print(f"RESPONSE CODE : {r.status_code}")
-            except Exception:
+            except AttributeError:
                 pass
             try:
                 print(f"ERROR TEXT    : {net_info['errorMsg']}")
             except KeyError:
                 pass
-            print(">>>>> BEGIN RESPONSE TEXT")
+            print(">>>>>>> BEGIN RESPONSE TEXT")
             try:
                 print(r.text)
-            except Exception:
+            except AttributeError:
                 pass
-            print("<<<<< END RESPONSE TEXT")
+            print("<<<<<<< END RESPONSE TEXT")
             print("VERDICT       : " + str(query_status))
             print("+++++++++++++++++++++")
 
