@@ -176,7 +176,7 @@ class SitesInformation:
                         except KeyError:
                             pass
 
-            except Exception:
+            except (requests.RequestException, OSError, ValueError):
                 # If there was any problem loading the exclusions, just continue without them
                 print("Warning: Could not load exclusions, continuing without them.")
                 honor_exclusions = False
