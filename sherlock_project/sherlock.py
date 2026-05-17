@@ -762,7 +762,7 @@ def main():
                 honor_exclusions=not args.ignore_exclusions,
                 do_not_exclude=args.site_list,
             )
-    except (ValueError, FileNotFoundError, OSError) as error:
+    except (ValueError, FileNotFoundError, OSError, requests.exceptions.RequestException) as error:
         print(f"ERROR:  {error}")
         sys.exit(1)
 
