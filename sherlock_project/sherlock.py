@@ -370,7 +370,7 @@ def sherlock(
         except Exception:
             http_status = "?"
         try:
-            response_text = r.text.encode(r.encoding or "UTF-8")
+            response_text = r.text
         except Exception:
             response_text = ""
 
