@@ -152,7 +152,7 @@ class SitesInformation:
                             f"Problem parsing json contents at '{data_file_path}':  {error}."
                         )
 
-            except FileNotFoundError:
+            except OSError:
                 raise FileNotFoundError(f"Problem while attempting to access "
                                         f"data file '{data_file_path}'."
                                         )
