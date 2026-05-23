@@ -350,7 +350,7 @@ def sherlock(
         # Get the expected error type
         error_type = net_info["errorType"]
         if isinstance(error_type, str):
-            error_type: list[str] = [error_type]
+            error_type = [error_type]
 
         # Retrieve future and ensure it has finished
         future = net_info["request_future"]
