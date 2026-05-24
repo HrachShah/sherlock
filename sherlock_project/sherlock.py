@@ -365,14 +365,8 @@ def sherlock(
             response_time = None
 
         # Attempt to get request information
-        try:
-            http_status = r.status_code
-        except Exception:
-            http_status = "?"
-        try:
-            response_text = r.text.encode(r.encoding or "UTF-8")
-        except Exception:
-            response_text = ""
+        http_status = getattr(r, 'status_code', "?")
+        response_text = getattr(r, 'text', "")
 
         query_status = QueryStatus.UNKNOWN
         error_context = None
@@ -461,19 +455,11 @@ def sherlock(
             except KeyError:
                 pass
             print("Results...")
-            try:
+            if hasattr(r, 'status_code'):
                 print(f"RESPONSE CODE : {r.status_code}")
-            except Exception:
-                pass
-            try:
-                print(f"ERROR TEXT    : {net_info['errorMsg']}")
-            except KeyError:
-                pass
-            print(">>>>> BEGIN RESPONSE TEXT")
-            try:
+            print(">>>>>> BEGIN RESPONSE TEXT")
+            if hasattr(r, 'text'):
                 print(r.text)
-            except Exception:
-                pass
             print("<<<<< END RESPONSE TEXT")
             print("VERDICT       : " + str(query_status))
             print("+++++++++++++++++++++")
@@ -708,7 +694,7 @@ def main():
                 f"\n{latest_release_json['html_url']}"
             )
 
-    except Exception as error:
+    except (requests.RequestException, ValueError, OSError) as error:
         print(f"A problem occurred while checking for an update: {error}")
 
     # Make prompts
@@ -762,7 +748,7 @@ def main():
                 honor_exclusions=not args.ignore_exclusions,
                 do_not_exclude=args.site_list,
             )
-    except Exception as error:
+    except (FileNotFoundError, ValueError) as error:
         print(f"ERROR:  {error}")
         sys.exit(1)
 
