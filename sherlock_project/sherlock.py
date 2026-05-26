@@ -708,7 +708,7 @@ def main():
                 f"\n{latest_release_json['html_url']}"
             )
 
-    except Exception as error:
+    except requests.RequestException as error:
         print(f"A problem occurred while checking for an update: {error}")
 
     # Make prompts
