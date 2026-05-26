@@ -206,7 +206,7 @@ class QueryNotifyPrint(QueryNotify):
             if self.browse:
                 try:
                     webbrowser.open(self.result.site_url_user, 2)
-                except Exception:
+                except OSError:
                     pass
 
         elif result.status == QueryStatus.AVAILABLE:
