@@ -762,9 +762,9 @@ def main():
                 honor_exclusions=not args.ignore_exclusions,
                 do_not_exclude=args.site_list,
             )
-    except Exception as error:
-        print(f"ERROR:  {error}")
-        sys.exit(1)
+        except (ValueError, KeyError) as error:
+            print(f"ERROR:  {error}")
+            sys.exit(1)
 
     if not args.nsfw:
         sites.remove_nsfw_sites(do_not_remove=args.site_list)
