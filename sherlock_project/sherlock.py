@@ -830,6 +830,17 @@ def main():
         else:
             result_file = f"{username}.txt"
 
+        # The CSV / XLSX branches route through args.folderoutput only;
+        # --output points at an arbitrary user-supplied path that may live
+        # in a directory that does not exist yet (e.g. ./build/reports/user.txt
+        # with no ./build dir). open() would crash with FileNotFoundError on
+        # the missing parent, so create the parent directory the same way
+        # the folderoutput branch does and let the caller pass a fresh path
+        # through.
+        result_parent = os.path.dirname(os.path.abspath(result_file))
+        if result_parent:
+            os.makedirs(result_parent, exist_ok=True)
+
         if args.output_txt:
             with open(result_file, "w", encoding="utf-8") as file:
                 exists_counter = 0
