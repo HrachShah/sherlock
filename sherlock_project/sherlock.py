@@ -364,14 +364,25 @@ def sherlock(
         except AttributeError:
             response_time = None
 
-        # Attempt to get request information
+        # Attempt to get request information.
+        #
+        # r is either a requests.Response or None (when get_response failed
+        # to even build one), so r.status_code and r.text can raise
+        # AttributeError when r is None. r.text can additionally raise
+        # requests.exceptions.ChunkedEncodingError, ConnectionError, or
+        # UnicodeDecodeError if the response is malformed, and r.encoding
+        # can return a codec name the stdlib does not know about (which
+        # makes str.encode raise LookupError). The previous bare
+        # `except Exception:` was also silently swallowing KeyboardInterrupt
+        # and SystemExit, which is a real problem on a long-running
+        # username scan that needs to remain responsive to Ctrl-C.
         try:
             http_status = r.status_code
-        except Exception:
+        except AttributeError:
             http_status = "?"
         try:
             response_text = r.text.encode(r.encoding or "UTF-8")
-        except Exception:
+        except (AttributeError, requests.exceptions.RequestException, UnicodeEncodeError, LookupError):
             response_text = ""
 
         query_status = QueryStatus.UNKNOWN
