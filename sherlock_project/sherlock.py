@@ -463,7 +463,12 @@ def sherlock(
             print("Results...")
             try:
                 print(f"RESPONSE CODE : {r.status_code}")
-            except Exception:
+            except (requests.exceptions.RequestException, AttributeError):
+                # r can be None when the upstream request_future raised
+                # something the get_response() handler did not catch, in
+                # which case r.status_code raises AttributeError. The
+                # RequestException family covers cases where the underlying
+                # session has been closed mid-debug-print.
                 pass
             try:
                 print(f"ERROR TEXT    : {net_info['errorMsg']}")
@@ -472,7 +477,14 @@ def sherlock(
             print(">>>>> BEGIN RESPONSE TEXT")
             try:
                 print(r.text)
-            except Exception:
+            except (requests.exceptions.RequestException, AttributeError):
+                # r.text reads the response body, which can raise if the
+                # socket has been torn down (ChunkedEncodingError is a
+                # RequestException subclass). AttributeError covers the
+                # same r-is-None case as above. The previous bare
+                # `except Exception:` was also swallowing KeyboardInterrupt
+                # and SystemExit, which would prevent a Ctrl-C during a
+                # debug run from terminating the process.
                 pass
             print("<<<<< END RESPONSE TEXT")
             print("VERDICT       : " + str(query_status))
