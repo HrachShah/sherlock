@@ -935,7 +935,20 @@ def main():
                     "response_time_s": response_time_s,
                 }
             )
-            DataFrame.to_excel(f"{username}.xlsx", sheet_name="sheet1", index=False)
+            # Honor --folderoutput the same way the CSV export above does: build
+            # the xlsx path with the same prefix logic, create the folder if
+            # needed, and write the file. The previous f"{username}.xlsx"
+            # ignored --folderoutput entirely, so a multi-username scan with
+            # --xlsx --folderoutput ./out/ dumped every xlsx into the current
+            # working directory instead of ./out/, which silently broke any
+            # downstream pipeline that expected the file to be in --folderoutput.
+            xlsx_result_file = f"{username}.xlsx"
+            if args.folderoutput:
+                # The xlsx should be stored in the targeted folder.
+                # If the folder doesn't exist, create it first.
+                os.makedirs(args.folderoutput, exist_ok=True)
+                xlsx_result_file = os.path.join(args.folderoutput, xlsx_result_file)
+            DataFrame.to_excel(xlsx_result_file, sheet_name="sheet1", index=False)
 
         print()
     query_notify.finish()
