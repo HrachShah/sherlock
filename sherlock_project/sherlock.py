@@ -911,10 +911,21 @@ def main():
                 ):
                     continue
 
-                if response_time_s is None:
+                # The previous guard tested the response_time_s LIST (which
+                # is initialised to [] a few lines above and therefore never
+                # None), so the if branch was dead code and the else branch
+                # always appended query_time verbatim. When a request failed
+                # or timed out query_time is None and got written into the
+                # .xlsx as a Python None, which openpyxl renders as an empty
+                # cell. The CSV export right above this block uses the per-row
+                # `if results[site]["status"].query_time is None: response_time_s = ""`
+                # pattern, so mirror that here: check the per-site query_time
+                # and append an empty string for missing timings.
+                query_time = results[site]["status"].query_time
+                if query_time is None:
                     response_time_s.append("")
                 else:
-                    response_time_s.append(results[site]["status"].query_time)
+                    response_time_s.append(query_time)
                 usernames.append(username)
                 names.append(site)
                 url_main.append(results[site]["url_main"])
