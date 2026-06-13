@@ -167,6 +167,28 @@ def multiple_usernames(username):
     return allUsernames
 
 
+def output_path_for(args, username: str, suffix: str) -> str:
+    """Return the on-disk path to use for an output file with the given suffix.
+
+    Resolves ``args.output`` (with the existing extension replaced by ``suffix``)
+    when the user gave an explicit path, ``args.folderoutput`` (joined with
+    ``username``) when the user asked for a folder, and a cwd-relative
+    ``username + suffix`` otherwise. Centralizing this here keeps ``--output``
+    consistent across ``--output_txt``/``--csv``/``--xlsx`` instead of each
+    branch hard-coding its own ``f"{username}.{{ext}}"`` and dropping the
+    user's path on the floor (the previous behavior silently ignored
+    ``--output`` whenever ``--csv`` or ``--xlsx`` was also given).
+    """
+    if args.output:
+        base, _ = os.path.splitext(args.output)
+        return f"{base}{suffix}"
+    if args.folderoutput:
+        # The user asked for a folder; honor it and make sure it exists.
+        os.makedirs(args.folderoutput, exist_ok=True)
+        return os.path.join(args.folderoutput, f"{username}{suffix}")
+    return f"{username}{suffix}"
+
+
 def sherlock(
     username: str,
     site_data: dict[str, dict[str, str]],
@@ -820,18 +842,21 @@ def main():
             timeout=args.timeout,
         )
 
-        if args.output:
-            result_file = args.output
-        elif args.folderoutput:
-            # The usernames results should be stored in a targeted folder.
-            # If the folder doesn't exist, create it first
-            os.makedirs(args.folderoutput, exist_ok=True)
-            result_file = os.path.join(args.folderoutput, f"{username}.txt")
-        else:
-            result_file = f"{username}.txt"
+        # Resolve the on-disk path for every output format up front so a
+        # user-supplied --output or --folderoutput is honored consistently
+        # across --output_txt / --csv / --xlsx. Previously the csv and xlsx
+        # branches each hard-coded f"{username}.{{ext}}" and silently dropped
+        # args.output on the floor, so --output foo.txt --csv wrote the CSV
+        # to ./username.csv in cwd instead of foo.csv. output_path_for()
+        # strips any existing extension from --output and re-applies the
+        # format-specific suffix.
+        txt_path = output_path_for(args, username, ".txt")
+        csv_path = output_path_for(args, username, ".csv")
+        xlsx_path = output_path_for(args, username, ".xlsx")
+        result_file = txt_path  # preserve the legacy local for --output_txt
 
         if args.output_txt:
-            with open(result_file, "w", encoding="utf-8") as file:
+            with open(txt_path, "w", encoding="utf-8") as file:
                 exists_counter = 0
                 for website_name in results:
                     dictionary = results[website_name]
@@ -841,14 +866,9 @@ def main():
                 file.write(f"Total Websites Username Detected On : {exists_counter}\n")
 
         if args.csv:
-            result_file = f"{username}.csv"
-            if args.folderoutput:
-                # The usernames results should be stored in a targeted folder.
-                # If the folder doesn't exist, create it first
-                os.makedirs(args.folderoutput, exist_ok=True)
-                result_file = os.path.join(args.folderoutput, result_file)
-
-            with open(result_file, "w", newline="", encoding="utf-8") as csv_report:
+            # csv_path was resolved up front so --output and --folderoutput
+            # apply the same way as for the txt branch.
+            with open(csv_path, "w", newline="", encoding="utf-8") as csv_report:
                 writer = csv.writer(csv_report)
                 writer.writerow(
                     [
@@ -922,7 +942,11 @@ def main():
                     "response_time_s": response_time_s,
                 }
             )
-            DataFrame.to_excel(f"{username}.xlsx", sheet_name="sheet1", index=False)
+            # xlsx_path was resolved up front so --output and --folderoutput
+            # apply the same way as for the txt and csv branches. Previously
+            # this branch hard-coded f"{username}.xlsx" in cwd and dropped
+            # args.output on the floor.
+            DataFrame.to_excel(xlsx_path, sheet_name="sheet1", index=False)
 
         print()
     query_notify.finish()
