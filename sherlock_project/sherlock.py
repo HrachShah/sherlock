@@ -367,11 +367,11 @@ def sherlock(
         # Attempt to get request information
         try:
             http_status = r.status_code
-        except Exception:
+        except AttributeError:
             http_status = "?"
         try:
-            response_text = r.text.encode(r.encoding or "UTF-8")
-        except Exception:
+            response_text = r.text
+        except AttributeError:
             response_text = ""
 
         query_status = QueryStatus.UNKNOWN
@@ -463,18 +463,18 @@ def sherlock(
             print("Results...")
             try:
                 print(f"RESPONSE CODE : {r.status_code}")
-            except Exception:
+            except AttributeError:
                 pass
             try:
                 print(f"ERROR TEXT    : {net_info['errorMsg']}")
             except KeyError:
                 pass
-            print(">>>>> BEGIN RESPONSE TEXT")
+            print(">>>>>>> BEGIN RESPONSE TEXT")
             try:
                 print(r.text)
-            except Exception:
+            except AttributeError:
                 pass
-            print("<<<<< END RESPONSE TEXT")
+            print("<<<<<<< END RESPONSE TEXT")
             print("VERDICT       : " + str(query_status))
             print("+++++++++++++++++++++")
 
@@ -708,7 +708,7 @@ def main():
                 f"\n{latest_release_json['html_url']}"
             )
 
-    except Exception as error:
+    except (requests.exceptions.RequestException, AttributeError, json.JSONDecodeError) as error:
         print(f"A problem occurred while checking for an update: {error}")
 
     # Make prompts
@@ -762,7 +762,7 @@ def main():
                 honor_exclusions=not args.ignore_exclusions,
                 do_not_exclude=args.site_list,
             )
-    except Exception as error:
+    except (ValueError, FileNotFoundError, OSError, requests.exceptions.RequestException) as error:
         print(f"ERROR:  {error}")
         sys.exit(1)
 
@@ -829,6 +829,17 @@ def main():
             result_file = os.path.join(args.folderoutput, f"{username}.txt")
         else:
             result_file = f"{username}.txt"
+
+        # The CSV / XLSX branches route through args.folderoutput only;
+        # --output points at an arbitrary user-supplied path that may live
+        # in a directory that does not exist yet (e.g. ./build/reports/user.txt
+        # with no ./build dir). open() would crash with FileNotFoundError on
+        # the missing parent, so create the parent directory the same way
+        # the folderoutput branch does and let the caller pass a fresh path
+        # through.
+        result_parent = os.path.dirname(os.path.abspath(result_file))
+        if result_parent:
+            os.makedirs(result_parent, exist_ok=True)
 
         if args.output_txt:
             with open(result_file, "w", encoding="utf-8") as file:
@@ -900,10 +911,21 @@ def main():
                 ):
                     continue
 
-                if response_time_s is None:
+                # The previous guard tested the response_time_s LIST (which
+                # is initialised to [] a few lines above and therefore never
+                # None), so the if branch was dead code and the else branch
+                # always appended query_time verbatim. When a request failed
+                # or timed out query_time is None and got written into the
+                # .xlsx as a Python None, which openpyxl renders as an empty
+                # cell. The CSV export right above this block uses the per-row
+                # `if results[site]["status"].query_time is None: response_time_s = ""`
+                # pattern, so mirror that here: check the per-site query_time
+                # and append an empty string for missing timings.
+                query_time = results[site]["status"].query_time
+                if query_time is None:
                     response_time_s.append("")
                 else:
-                    response_time_s.append(results[site]["status"].query_time)
+                    response_time_s.append(query_time)
                 usernames.append(username)
                 names.append(site)
                 url_main.append(results[site]["url_main"])
