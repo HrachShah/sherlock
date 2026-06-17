@@ -159,18 +159,37 @@ class QueryNotifyPrint(QueryNotify):
         print('\r')
 
 
-    def countResults(self):
-        """This function counts the number of results. Every time the function is called,
-        the number of results is increasing.
+    def _recordClaimedResult(self):
+        """Increment the running total of claimed results.
+
+        Called from :meth:`update` once per ``QueryStatus.CLAIMED`` result.
+        Separated from :meth:`countResults` so the total can be read without
+        a side effect — :meth:`finish` previously had to call
+        ``countResults() - 1`` to undo the increment the read caused.
 
         Keyword Arguments:
         self                   -- This object.
 
         Return Value:
-        The number of results by the time we call the function.
+        The new total of claimed results after this increment.
         """
         global globvar
         globvar += 1
+        return globvar
+
+    def countResults(self):
+        """Return the current number of claimed results.
+
+        Does not mutate the counter; use :meth:`_recordClaimedResult` to
+        record a new claimed result.
+
+        Keyword Arguments:
+        self                   -- This object.
+
+        Return Value:
+        The number of claimed results recorded so far.
+        """
+        global globvar
         return globvar
 
     def update(self, result):
@@ -194,7 +213,7 @@ class QueryNotifyPrint(QueryNotify):
 
         # Output to the terminal is desired.
         if result.status == QueryStatus.CLAIMED:
-            self.countResults()
+            self._recordClaimedResult()
             print(Style.BRIGHT + Fore.WHITE + "[" +
                   Fore.GREEN + "+" +
                   Fore.WHITE + "]" +
@@ -258,7 +277,7 @@ class QueryNotifyPrint(QueryNotify):
         Return Value:
         Nothing.
         """
-        NumberOfResults = self.countResults() - 1
+        NumberOfResults = self.countResults()
 
         print(Style.BRIGHT + Fore.GREEN + "[" +
               Fore.YELLOW + "*" +
