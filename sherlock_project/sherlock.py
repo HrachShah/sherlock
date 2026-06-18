@@ -25,6 +25,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from json import loads as json_loads
 from time import monotonic
 from typing import Optional
+from urllib.parse import quote
 
 import requests
 from requests_futures.sessions import FuturesSession
@@ -167,6 +168,25 @@ def multiple_usernames(username):
     return allUsernames
 
 
+def encode_username_for_url(username):
+    """Percent-encode a username for safe inclusion in a URL path or query.
+
+    Replaces the previous ad-hoc ``username.replace(' ', '%20')`` which only
+    handled spaces and left characters like ``?``, ``#``, ``&``, ``+``,
+    ``/``, ``%`` and any non-ASCII bytes raw. A username containing one of
+    those characters would corrupt the resulting URL: ``#`` would be
+    interpreted as a fragment delimiter by the server, ``?`` as a query
+    string, ``+`` as a space by form-decoders, and a raw non-ASCII byte
+    (e.g. ``é``, emoji) would force the path to be re-encoded by the HTTP
+    library and could land at a different route than intended.
+
+    ``urllib.parse.quote`` with the default ``safe=''`` encodes every
+    character except the unreserved set (letters, digits, ``-._~``) and
+    matches the form the receiving site is expected to URL-decode.
+    """
+    return quote(username, safe="")
+
+
 def sherlock(
     username: str,
     site_data: dict[str, dict[str, str]],
@@ -243,7 +263,7 @@ def sherlock(
             headers.update(net_info["headers"])
 
         # URL of user on site (if it exists)
-        url = interpolate_string(net_info["url"], username.replace(' ', '%20'))
+        url = interpolate_string(net_info["url"], encode_username_for_url(username))
 
         # Don't make request if username is invalid for the site
         regex_check = net_info.get("regexCheck")
