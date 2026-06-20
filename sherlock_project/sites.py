@@ -165,16 +165,19 @@ class SitesInformation:
                 if response.status_code == 200:
                     exclusions = response.text.splitlines()
                     exclusions = [exclusion.strip() for exclusion in exclusions]
-
+                    # Build a casefold→original mapping so that a user passing
+                    # --site github / GitHub / GITHUB all match the 'GitHub'
+                    # entry in the exclusions list regardless of case.
+                    exclusion_map = {exclusion.casefold(): exclusion for exclusion in exclusions}
                     for site in do_not_exclude:
-                        if site in exclusions:
-                            exclusions.remove(site)
+                        site_cf = site.casefold()
+                        if site_cf in exclusion_map:
+                            exclusions.remove(exclusion_map.pop(site_cf))
 
-                    for exclusion in exclusions:
-                        try:
-                            site_data.pop(exclusion, None)
-                        except KeyError:
-                            pass
+                    site_name_cf_map = {site.casefold(): site for site in site_data}
+                    for cf_exclusion, original_exclusion in exclusion_map.items():
+                        if cf_exclusion in site_name_cf_map:
+                            site_data.pop(site_name_cf_map[cf_exclusion], None)
 
             except (requests.RequestException, OSError, ValueError):
                 # If there was any problem loading the exclusions, just continue without them
