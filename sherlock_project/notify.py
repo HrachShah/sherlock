@@ -204,7 +204,10 @@ class QueryNotifyPrint(QueryNotify):
                   Style.RESET_ALL +
                   f"{self.result.site_url_user}")
             if self.browse:
-                webbrowser.open(self.result.site_url_user, 2)
+                try:
+                    webbrowser.open(self.result.site_url_user, 2)
+                except OSError:
+                    pass
 
         elif result.status == QueryStatus.AVAILABLE:
             if self.print_all:
