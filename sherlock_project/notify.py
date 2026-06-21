@@ -169,8 +169,6 @@ class QueryNotifyPrint(QueryNotify):
         Return Value:
         The number of results by the time we call the function.
         """
-        global globvar
-        globvar += 1
         return globvar
 
     def update(self, result):
@@ -186,6 +184,7 @@ class QueryNotifyPrint(QueryNotify):
         Return Value:
         Nothing.
         """
+        global globvar
         self.result = result
 
         response_time_text = ""
@@ -194,7 +193,7 @@ class QueryNotifyPrint(QueryNotify):
 
         # Output to the terminal is desired.
         if result.status == QueryStatus.CLAIMED:
-            self.countResults()
+            globvar += 1
             print(Style.BRIGHT + Fore.WHITE + "[" +
                   Fore.GREEN + "+" +
                   Fore.WHITE + "]" +
@@ -258,7 +257,7 @@ class QueryNotifyPrint(QueryNotify):
         Return Value:
         Nothing.
         """
-        NumberOfResults = self.countResults() - 1
+        NumberOfResults = self.countResults()
 
         print(Style.BRIGHT + Fore.GREEN + "[" +
               Fore.YELLOW + "*" +
