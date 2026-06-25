@@ -924,6 +924,11 @@ def main():
                         ]
                     )
         if args.xlsx:
+            xlsx_file = f"{username}.xlsx"
+            if args.folderoutput:
+                os.makedirs(args.folderoutput, exist_ok=True)
+                xlsx_file = os.path.join(args.folderoutput, xlsx_file)
+
             usernames = []
             names = []
             url_main = []
@@ -963,7 +968,7 @@ def main():
                     "response_time_s": response_time_s,
                 }
             )
-            DataFrame.to_excel(f"{username}.xlsx", sheet_name="sheet1", index=False)
+            DataFrame.to_excel(xlsx_file, sheet_name="sheet1", index=False)
 
         print()
     query_notify.finish()
