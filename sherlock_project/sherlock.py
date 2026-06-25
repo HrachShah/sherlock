@@ -121,6 +121,21 @@ def get_response(request_future, error_type, social_network):
         if response.status_code:
             # Status code exists in response object
             error_context = None
+    except AttributeError:
+        # request_future.result() returned something that is not a
+        # requests.Response (e.g. a custom transport stub, a cancelled
+        # future, or a None). The previous code didn't catch this and
+        # the AttributeError bubbled all the way up to the sherlock()
+        # caller's `try/except Exception` block in main(), which treated
+        # it as a fatal CLI error and exited. Track the failure as
+        # "Unknown Error" with the missing attribute name so the caller
+        # can surface it as QueryStatus.UNKNOWN and continue with the
+        # next site.
+        error_context = "Unknown Error"
+        exception_text = (
+            f"Response has no 'status_code' attribute"
+            f" (got {type(response).__name__})"
+        )
     except requests.exceptions.HTTPError as errh:
         error_context = "HTTP Error"
         exception_text = str(errh)
@@ -365,13 +380,26 @@ def sherlock(
             response_time = None
 
         # Attempt to get request information
+        # Only AttributeError is realistic for r.status_code (r is None when
+        # get_response() could not resolve the future, or a misbehaving transport
+        # returned a non-Response object). The bare `except Exception` was also
+        # catching TypeError (e.g. calling .status_code on an int) and any
+        # downstream RuntimeError raised from a custom response hook, both of
+        # which should bubble up to the caller rather than be silenced into
+        # http_status = "?".
         try:
             http_status = r.status_code
-        except Exception:
+        except AttributeError:
             http_status = "?"
         try:
+            # r.text is always present on a real Response, but .encode() on the
+            # value needs the str; a None encoding (set by some transports)
+            # makes `or "UTF-8"` return "UTF-8" instead of crashing on the
+            # .encode() call. Limit the catch to AttributeError (no .text) and
+            # TypeError (None or non-str in .text) — both realistic, both
+            # recoverable by replacing the value with an empty bytes literal.
             response_text = r.text.encode(r.encoding or "UTF-8")
-        except Exception:
+        except (AttributeError, TypeError):
             response_text = ""
 
         query_status = QueryStatus.UNKNOWN
@@ -463,7 +491,11 @@ def sherlock(
             print("Results...")
             try:
                 print(f"RESPONSE CODE : {r.status_code}")
-            except Exception:
+            except AttributeError:
+                # r can be None when get_response() couldn't resolve the future;
+                # .status_code is also missing on transports that hand back a
+                # bare object. Both cases should silently print nothing rather
+                # than crash the dump block.
                 pass
             try:
                 print(f"ERROR TEXT    : {net_info['errorMsg']}")
@@ -472,7 +504,8 @@ def sherlock(
             print(">>>>> BEGIN RESPONSE TEXT")
             try:
                 print(r.text)
-            except Exception:
+            except AttributeError:
+                # r.text is missing on the same None/weird-object cases as above.
                 pass
             print("<<<<< END RESPONSE TEXT")
             print("VERDICT       : " + str(query_status))
@@ -708,7 +741,14 @@ def main():
                 f"\n{latest_release_json['html_url']}"
             )
 
-    except Exception as error:
+    # The update-check block can fail in three concrete ways: the HTTP call
+    # can raise a requests.RequestException (DNS, connection refused, timeout,
+    # 5xx with retries exhausted), .text can be a non-JSON / truncated
+    # payload (json.JSONDecodeError), or the response can be valid JSON
+    # without the expected "tag_name" key (KeyError). Catching all of those
+    # under one except keeps the update check from being a startup blocker
+    # while still being precise about what went wrong.
+    except (requests.RequestException, json.JSONDecodeError, KeyError) as error:
         print(f"A problem occurred while checking for an update: {error}")
 
     # Make prompts
@@ -884,6 +924,11 @@ def main():
                         ]
                     )
         if args.xlsx:
+            xlsx_file = f"{username}.xlsx"
+            if args.folderoutput:
+                os.makedirs(args.folderoutput, exist_ok=True)
+                xlsx_file = os.path.join(args.folderoutput, xlsx_file)
+
             usernames = []
             names = []
             url_main = []
@@ -900,10 +945,11 @@ def main():
                 ):
                     continue
 
-                if response_time_s is None:
+                query_time = results[site]["status"].query_time
+                if query_time is None:
                     response_time_s.append("")
                 else:
-                    response_time_s.append(results[site]["status"].query_time)
+                    response_time_s.append(query_time)
                 usernames.append(username)
                 names.append(site)
                 url_main.append(results[site]["url_main"])
@@ -922,7 +968,7 @@ def main():
                     "response_time_s": response_time_s,
                 }
             )
-            DataFrame.to_excel(f"{username}.xlsx", sheet_name="sheet1", index=False)
+            DataFrame.to_excel(xlsx_file, sheet_name="sheet1", index=False)
 
         print()
     query_notify.finish()
