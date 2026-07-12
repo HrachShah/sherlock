@@ -24,7 +24,7 @@ import re
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from json import loads as json_loads
 from time import monotonic
-from typing import Optional
+from typing import Any, Optional
 
 import requests
 from requests_futures.sessions import FuturesSession
@@ -884,48 +884,69 @@ def main():
                         ]
                     )
         if args.xlsx:
-            usernames = []
-            names = []
-            url_main = []
-            url_user = []
-            exists = []
-            http_status = []
-            response_time_s = []
-
-            for site in results:
-                if (
-                    args.print_found
-                    and not args.print_all
-                    and results[site]["status"].status != QueryStatus.CLAIMED
-                ):
-                    continue
-
-                if response_time_s is None:
-                    response_time_s.append("")
-                else:
-                    response_time_s.append(results[site]["status"].query_time)
-                usernames.append(username)
-                names.append(site)
-                url_main.append(results[site]["url_main"])
-                url_user.append(results[site]["url_user"])
-                exists.append(str(results[site]["status"].status))
-                http_status.append(results[site]["http_status"])
-
-            DataFrame = pd.DataFrame(
-                {
-                    "username": usernames,
-                    "name": names,
-                    "url_main": [f'=HYPERLINK(\"{u}\")' for u in url_main],
-                    "url_user": [f'=HYPERLINK(\"{u}\")' for u in url_user],
-                    "exists": exists,
-                    "http_status": http_status,
-                    "response_time_s": response_time_s,
-                }
+            DataFrame = _build_xlsx_dataframe(
+                username=username,
+                results=results,
+                print_found=args.print_found,
+                print_all=args.print_all,
             )
             DataFrame.to_excel(f"{username}.xlsx", sheet_name="sheet1", index=False)
 
         print()
     query_notify.finish()
+
+
+def _build_xlsx_dataframe(
+    username: str,
+    results: dict[str, dict[str, Any]],
+    print_found: bool,
+    print_all: bool,
+):
+    """Collect per-site columns for the ``.xlsx`` export.
+
+    Mirrors the filtering the CSV exporter applies (``print_found`` + ``print_all``
+    gate) and the same ``query_time is None`` -> empty-string fallback the CSV
+    exporter uses, so a CSV export and an XLSX export of the same query end up
+    with the same row set and the same per-row response time.
+    """
+    usernames: list[str] = []
+    names: list[str] = []
+    url_main: list[str] = []
+    url_user: list[str] = []
+    exists: list[str] = []
+    http_status: list[t.Any] = []
+    response_time_s: list[t.Any] = []
+
+    for site in results:
+        if (
+            print_found
+            and not print_all
+            and results[site]["status"].status != QueryStatus.CLAIMED
+        ):
+            continue
+
+        if results[site]["status"].query_time is None:
+            response_time_s.append("")
+        else:
+            response_time_s.append(results[site]["status"].query_time)
+        usernames.append(username)
+        names.append(site)
+        url_main.append(results[site]["url_main"])
+        url_user.append(results[site]["url_user"])
+        exists.append(str(results[site]["status"].status))
+        http_status.append(results[site]["http_status"])
+
+    return pd.DataFrame(
+        {
+            "username": usernames,
+            "name": names,
+            "url_main": [f'=HYPERLINK("{u}")' for u in url_main],
+            "url_user": [f'=HYPERLINK("{u}")' for u in url_user],
+            "exists": exists,
+            "http_status": http_status,
+            "response_time_s": response_time_s,
+        }
+    )
 
 
 if __name__ == "__main__":
