@@ -37,3 +37,19 @@ def test_validate_manifest_against_remote_schema(remote_schema):
 ])
 def test_site_list_iterability (sites_info, target_name, target_expected_err_type):
     assert sites_info[target_name]['errorType'] == target_expected_err_type
+
+
+def test_site_information_preserves_explicit_unclaimed_username():
+    from sherlock_project.sites import SiteInformation
+
+    site = SiteInformation(
+        "Example",
+        "https://example.com",
+        "https://example.com/{}/",
+        "claimed",
+        {},
+        False,
+        username_unclaimed="known-unclaimed",
+    )
+
+    assert site.username_unclaimed == "known-unclaimed"
