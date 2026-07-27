@@ -53,3 +53,21 @@ def test_site_information_preserves_explicit_unclaimed_username():
     )
 
     assert site.username_unclaimed == "known-unclaimed"
+
+
+def test_site_information_generates_distinct_unclaimed_usernames():
+    from sherlock_project.sites import SiteInformation
+
+    kwargs = {
+        "name": "Example",
+        "url_home": "https://example.com",
+        "url_username_format": "https://example.com/{}/",
+        "username_claimed": "claimed",
+        "information": {},
+        "is_nsfw": False,
+    }
+
+    first = SiteInformation(**kwargs)
+    second = SiteInformation(**kwargs)
+
+    assert first.username_unclaimed != second.username_unclaimed

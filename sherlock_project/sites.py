@@ -13,7 +13,7 @@ EXCLUSIONS_URL = "https://raw.githubusercontent.com/sherlock-project/sherlock/re
 
 class SiteInformation:
     def __init__(self, name, url_home, url_username_format, username_claimed,
-                information, is_nsfw, username_unclaimed=secrets.token_urlsafe(10)):
+                information, is_nsfw, username_unclaimed=None):
         """Create Site Information Object.
 
         Contains information about a specific website.
@@ -56,6 +56,8 @@ class SiteInformation:
         self.url_username_format = url_username_format
 
         self.username_claimed = username_claimed
+        if username_unclaimed is None:
+            username_unclaimed = secrets.token_urlsafe(10)
         self.username_unclaimed = username_unclaimed
         self.information = information
         self.is_nsfw  = is_nsfw
