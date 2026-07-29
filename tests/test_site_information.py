@@ -2,7 +2,7 @@
 
 import pytest
 
-from sherlock_project.sites import SiteInformation
+from sherlock_project.sites import SiteInformation, SitesInformation
 
 
 class TestSiteInformation:
@@ -48,3 +48,11 @@ class TestSiteInformation:
             username_unclaimed="definitely-not-a-real-user-zzz",
         )
         assert info.username_unclaimed == "definitely-not-a-real-user-zzz"
+
+
+def test_manifest_rejects_non_object_root(tmp_path):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text("[]", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="expected an object at the root"):
+        SitesInformation(data_file_path=str(manifest), honor_exclusions=False)
