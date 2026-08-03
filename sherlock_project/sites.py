@@ -80,7 +80,7 @@ class SitesInformation:
             self,
             data_file_path: str|None = None,
             honor_exclusions: bool = True,
-            do_not_exclude: list[str] = [],
+            do_not_exclude: list[str] | None = None,
         ):
         """Create Sites Information Object.
 
@@ -114,6 +114,9 @@ class SitesInformation:
         Return Value:
         Nothing.
         """
+
+        if do_not_exclude is None:
+            do_not_exclude = []
 
         if not data_file_path:
             # The default data file is the live data.json which is in the GitHub repo. The reason why we are using
@@ -205,7 +208,7 @@ class SitesInformation:
 
         return
 
-    def remove_nsfw_sites(self, do_not_remove: list = []):
+    def remove_nsfw_sites(self, do_not_remove: list | None = None):
         """
         Remove NSFW sites from the sites, if isNSFW flag is true for site
 
@@ -216,6 +219,8 @@ class SitesInformation:
         None
         """
         sites = {}
+        if do_not_remove is None:
+            do_not_remove = []
         do_not_remove = [site.casefold() for site in do_not_remove]
         for site in self.sites:
             if self.sites[site].is_nsfw and site.casefold() not in do_not_remove:

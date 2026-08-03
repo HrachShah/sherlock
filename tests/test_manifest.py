@@ -37,3 +37,11 @@ def test_validate_manifest_against_remote_schema(remote_schema):
 ])
 def test_site_list_iterability (sites_info, target_name, target_expected_err_type):
     assert sites_info[target_name]['errorType'] == target_expected_err_type
+
+
+def test_site_information_does_not_share_exclusion_defaults():
+    import inspect
+    from sherlock_project.sites import SitesInformation
+
+    parameter = inspect.signature(SitesInformation).parameters["do_not_exclude"]
+    assert parameter.default is None

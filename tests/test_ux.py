@@ -41,3 +41,11 @@ def test_wildcard_username_expansion():
 def test_no_usernames_provided(cliargs):
     with pytest.raises(InteractivesSubprocessError, match=r"error: the following arguments are required: USERNAMES"):
         Interactives.run_cli(cliargs)
+
+
+def test_remove_nsfw_does_not_share_default_selection():
+    import inspect
+    from sherlock_project.sites import SitesInformation
+
+    parameter = inspect.signature(SitesInformation.remove_nsfw_sites).parameters["do_not_remove"]
+    assert parameter.default is None
