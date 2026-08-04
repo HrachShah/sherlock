@@ -1,4 +1,5 @@
 import pytest
+from argparse import ArgumentTypeError
 from sherlock_project import sherlock
 from sherlock_interactives import Interactives
 from sherlock_interactives import InteractivesSubprocessError
@@ -41,3 +42,9 @@ def test_wildcard_username_expansion():
 def test_no_usernames_provided(cliargs):
     with pytest.raises(InteractivesSubprocessError, match=r"error: the following arguments are required: USERNAMES"):
         Interactives.run_cli(cliargs)
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf"])
+def test_timeout_rejects_non_finite_values(value):
+    with pytest.raises(ArgumentTypeError, match="positive number"):
+        sherlock.timeout_check(value)

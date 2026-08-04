@@ -18,6 +18,7 @@ except ImportError:
 
 import csv
 import signal
+from math import isfinite
 import pandas as pd
 import os
 import re
@@ -519,7 +520,7 @@ def timeout_check(value):
 
     float_value = float(value)
 
-    if float_value <= 0:
+    if not isfinite(float_value) or float_value <= 0:
         raise ArgumentTypeError(
             f"Invalid timeout value: {value}. Timeout must be a positive number."
         )
