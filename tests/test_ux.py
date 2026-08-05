@@ -48,3 +48,9 @@ def test_no_usernames_provided(cliargs):
 def test_timeout_rejects_non_finite_values(value):
     with pytest.raises(ArgumentTypeError, match="positive number"):
         sherlock.timeout_check(value)
+
+
+@pytest.mark.parametrize("value", [None, "not-a-number"])
+def test_timeout_rejects_non_numeric_values(value):
+    with pytest.raises(ArgumentTypeError, match="positive number"):
+        sherlock.timeout_check(value)
