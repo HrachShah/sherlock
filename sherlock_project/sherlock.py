@@ -20,6 +20,7 @@ import csv
 import signal
 import pandas as pd
 import os
+import math
 import re
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from json import loads as json_loads
@@ -519,9 +520,9 @@ def timeout_check(value):
 
     float_value = float(value)
 
-    if float_value <= 0:
+    if not math.isfinite(float_value) or float_value <= 0:
         raise ArgumentTypeError(
-            f"Invalid timeout value: {value}. Timeout must be a positive number."
+            f"Invalid timeout value: {value}. Timeout must be a finite positive number."
         )
 
     return float_value

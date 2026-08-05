@@ -49,3 +49,11 @@ def test_remove_nsfw_does_not_share_default_selection():
 
     parameter = inspect.signature(SitesInformation.remove_nsfw_sites).parameters["do_not_remove"]
     assert parameter.default is None
+
+
+def test_timeout_rejects_non_finite_values():
+    from sherlock_project.sherlock import timeout_check
+
+    for value in ("nan", "inf", "-inf"):
+        with pytest.raises(Exception, match="finite positive number"):
+            timeout_check(value)
