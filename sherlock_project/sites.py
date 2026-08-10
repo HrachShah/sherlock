@@ -13,7 +13,7 @@ EXCLUSIONS_URL = "https://raw.githubusercontent.com/sherlock-project/sherlock/re
 
 class SiteInformation:
     def __init__(self, name, url_home, url_username_format, username_claimed,
-                information, is_nsfw, username_unclaimed=secrets.token_urlsafe(10)):
+                information, is_nsfw, username_unclaimed=None):
         """Create Site Information Object.
 
         Contains information about a specific website.
@@ -56,7 +56,7 @@ class SiteInformation:
         self.url_username_format = url_username_format
 
         self.username_claimed = username_claimed
-        self.username_unclaimed = secrets.token_urlsafe(32)
+        self.username_unclaimed = username_unclaimed or secrets.token_urlsafe(32)
         self.information = information
         self.is_nsfw  = is_nsfw
 
@@ -80,7 +80,7 @@ class SitesInformation:
             self,
             data_file_path: str|None = None,
             honor_exclusions: bool = True,
-            do_not_exclude: list[str] = [],
+            do_not_exclude: list[str] | None = None,
         ):
         """Create Sites Information Object.
 
@@ -114,6 +114,9 @@ class SitesInformation:
         Return Value:
         Nothing.
         """
+
+        if do_not_exclude is None:
+            do_not_exclude = []
 
         if not data_file_path:
             # The default data file is the live data.json which is in the GitHub repo. The reason why we are using
