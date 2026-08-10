@@ -56,7 +56,7 @@ class SiteInformation:
         self.url_username_format = url_username_format
 
         self.username_claimed = username_claimed
-        self.username_unclaimed = secrets.token_urlsafe(32)
+        self.username_unclaimed = username_unclaimed or secrets.token_urlsafe(32)
         self.information = information
         self.is_nsfw  = is_nsfw
 
@@ -196,7 +196,8 @@ class SitesInformation:
                                     site_data[site_name]["url"],
                                     site_data[site_name]["username_claimed"],
                                     site_data[site_name],
-                                    site_data[site_name].get("isNSFW",False)
+                                    site_data[site_name].get("isNSFW",False),
+                                    site_data[site_name].get("username_unclaimed")
 
                                     )
             except KeyError as error:
