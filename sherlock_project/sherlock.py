@@ -518,6 +518,11 @@ def timeout_check(value):
     NOTE:  Will raise an exception if the timeout in invalid.
     """
 
+    if isinstance(value, bool):
+        raise ArgumentTypeError(
+            f"Invalid timeout value: {value}. Timeout must be a positive number."
+        )
+
     try:
         float_value = float(value)
     except (TypeError, ValueError) as error:
